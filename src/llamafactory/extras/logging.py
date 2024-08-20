@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import requests
 import logging
 import os
 import sys
@@ -25,7 +26,7 @@ class LoggerHandler(logging.Handler):
     Logger handler used in Web UI.
     """
 
-    def __init__(self, output_dir: str) -> None:
+    def __init__(self, output_dir: str, host, uri, baseParam) -> None:
         super().__init__()
         formatter = logging.Formatter(
             fmt="%(asctime)s - %(levelname)s - %(name)s - %(message)s", datefmt="%m/%d/%Y %H:%M:%S"
@@ -33,14 +34,26 @@ class LoggerHandler(logging.Handler):
         self.setLevel(logging.INFO)
         self.setFormatter(formatter)
 
-        os.makedirs(output_dir, exist_ok=True)
-        self.running_log = os.path.join(output_dir, RUNNING_LOG)
-        if os.path.exists(self.running_log):
-            os.remove(self.running_log)
+        self.baseParam = baseParam
+        if host == '':
+            self.url = ""
+        else:
+            self.url = "http://%s/%s"%(host,uri)
+
+        if host == "":
+            os.makedirs(output_dir, exist_ok=True)
+            self.running_log = os.path.join(output_dir, RUNNING_LOG)
+            if os.path.exists(self.running_log):
+                os.remove(self.running_log)
 
         self.thread_pool = ThreadPoolExecutor(max_workers=1)
 
     def _write_log(self, log_entry: str) -> None:
+
+        if self.url != "":
+            self.baseParam["logdata"] = log_entry
+            requests.post(self.url,data=self.baseParam)
+            return
         with open(self.running_log, "a", encoding="utf-8") as f:
             f.write(log_entry + "\n\n")
 

@@ -188,6 +188,16 @@ class LogCallback(TrainerCallback):
         self.do_train = False
         """ Web UI """
         self.webui_mode = os.environ.get("LLAMABOARD_ENABLED", "0").lower() in ["true", "1"]
+        """ HttpLog Mode"""
+        self.log_mode = os.environ.get("HTTTP_LOG","0").lower() in ["true", "1"]
+
+        if self.log_mode:
+            signal.signal(signal.SIGABRT, self._set_abort)
+            baseParam = {"taskid": os.environ.get("TASK_ID"),"rankid": os.environ.get("RANK")}
+            self.logger_handler = LoggerHandler("", host=os.environ.get("LOG_HOST"),uri=os.environ.get("LOG_URI"),baseParam=baseParam)
+            logging.root.addHandler(self.logger_handler)
+            transformers.logging.add_handler(self.logger_handler)
+
         if self.webui_mode:
             signal.signal(signal.SIGABRT, self._set_abort)
             self.logger_handler = LoggerHandler(os.environ.get("LLAMABOARD_WORKDIR"))
