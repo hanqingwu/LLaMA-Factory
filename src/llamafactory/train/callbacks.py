@@ -189,12 +189,14 @@ class LogCallback(TrainerCallback):
         """ Web UI """
         self.webui_mode = os.environ.get("LLAMABOARD_ENABLED", "0").lower() in ["true", "1"]
         """ HttpLog Mode"""
-        self.log_mode = os.environ.get("HTTTP_LOG","0").lower() in ["true", "1"]
+        self.http_log = os.environ.get("HTTTP_LOG","0").lower() in ["true", "1"]
 
-        if self.log_mode:
+        if self.http_log:
             signal.signal(signal.SIGABRT, self._set_abort)
-            baseParam = {"taskid": os.environ.get("TASK_ID"),"rankid": os.environ.get("RANK")}
-            self.logger_handler = LoggerHandler("", host=os.environ.get("LOG_HOST"),uri=os.environ.get("LOG_URI"),baseParam=baseParam)
+            self.url = "http://%s/%s"%(os.environ.get("LOG_HOST"), os.environ.get("LOG_URI"))
+            self.baseParam = {"taskid": os.environ.get("TASK_ID"),"rankid": os.environ.get("RANK")}
+            self.visualParam = {"taskid": os.environ.get("TASK_ID"),"rankid": os.environ.get("RANK")}
+            self.logger_handler = LoggerHandler("", host=os.environ.get("LOG_HOST"),uri=os.environ.get("LOG_URI"),baseParam=self.baseParam)
             logging.root.addHandler(self.logger_handler)
             transformers.logging.add_handler(self.logger_handler)
 
@@ -324,6 +326,17 @@ class LogCallback(TrainerCallback):
                     logs["loss"], logs["learning_rate"], logs["epoch"], logs["throughput"]
                 )
             )
+
+        if self.http_log and all(key in logs for key in ["loss", "learning_rate", "epoch"]):
+            import requests
+            log_entry = "{{'loss': {:.4f}, 'learning_rate': {:2.4e}, 'epoch': {:.2f}, 'throughput': {}}}".format(
+                    logs["loss"], logs["learning_rate"], logs["epoch"], logs["throughput"]
+                )
+
+            baseParam = self.visualParam
+            baseParam["visual_info"] = log_entry
+            requests.post(self.url,data=baseParam,timeout=5)
+
 
         if self.thread_pool is not None:
             self.thread_pool.submit(self._write_log, args.output_dir, logs)

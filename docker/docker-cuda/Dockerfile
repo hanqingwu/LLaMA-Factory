@@ -12,7 +12,7 @@ ARG INSTALL_BNB=false
 ARG INSTALL_VLLM=false
 ARG INSTALL_DEEPSPEED=false
 ARG INSTALL_FLASHATTN=false
-ARG PIP_INDEX=https://pypi.org/simple
+ARG PIP_INDEX=https://pypi.mirrors.ustc.edu.cn/simple/
 
 # Set the working directory
 WORKDIR /app
@@ -47,6 +47,7 @@ RUN pip uninstall -y transformer-engine flash-attn && \
         pip install --no-cache-dir flash-attn --no-build-isolation; \
     fi
 
+COPY Asia_Shanghai  /etc/localtime
 # Set up volumes
 VOLUME [ "/root/.cache/huggingface", "/root/.cache/modelscope", "/app/data", "/app/output" ]
 
