@@ -64,6 +64,18 @@ class ComputeAccuracy:
         if hasattr(self, "score_dict"):
             result = {k: float(np.mean(v)) for k, v in self.score_dict.items()}
 
+        """ HttpLog Mode"""
+        import os
+        import json
+        http_log = os.environ.get("HTTTP_LOG","0").lower() in ["true", "1"]
+        if http_log:
+            import requests
+            url = "http://%s/%s"%(os.environ.get("LOG_HOST"), os.environ.get("LOG_URI"))
+            visualParam = {"taskid": os.environ.get("TASK_ID"),"rankid": os.environ.get("RANK")}
+            visualParam["visual_info"] = json.dumps(result)
+            requests.post(url,data=visualParam,timeout=5)
+
+
         self.score_dict = {"accuracy": []}
         return result
 
@@ -71,6 +83,7 @@ class ComputeAccuracy:
         self._dump()
 
     def __call__(self, eval_preds: "EvalPrediction", compute_result: bool = True) -> Optional[Dict[str, float]]:
+
         preds, labels = numpify(eval_preds.predictions), numpify(eval_preds.label_ids)
         for i in range(len(preds)):
             pred, label = preds[i, :-1], labels[i, 1:]
@@ -95,6 +108,18 @@ class ComputeSimilarity:
             result = {k: float(np.mean(v)) for k, v in self.score_dict.items()}
 
         self.score_dict = {"rouge-1": [], "rouge-2": [], "rouge-l": [], "bleu-4": []}
+
+        import os
+        import json
+        """ HttpLog Mode"""
+        http_log = os.environ.get("HTTTP_LOG","0").lower() in ["true", "1"]
+        if http_log and result:
+            import requests
+            url = "http://%s/%s"%(os.environ.get("LOG_HOST"), os.environ.get("LOG_URI"))
+            visualParam = {"taskid": os.environ.get("TASK_ID"),"rankid": os.environ.get("RANK")}
+            visualParam["visual_info"] = json.dumps(result)
+            requests.post(url,data=visualParam,timeout=5)
+
         return result
 
     def __post_init__(self):

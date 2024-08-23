@@ -333,9 +333,9 @@ class LogCallback(TrainerCallback):
                     logs["loss"], logs["learning_rate"], logs["epoch"], logs["throughput"]
                 )
 
-            baseParam = self.visualParam
-            baseParam["visual_info"] = log_entry
-            requests.post(self.url,data=baseParam,timeout=5)
+            visualParam = self.visualParam
+            visualParam["visual_info"] = log_entry
+            requests.post(self.url,data=visualParam,timeout=5)
 
 
         if self.thread_pool is not None:
