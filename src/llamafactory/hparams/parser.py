@@ -63,11 +63,15 @@ def _parse_args(parser: "HfArgumentParser", args: Optional[Dict[str, Any]] = Non
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         return parser.parse_json_file(os.path.abspath(sys.argv[1]))
 
-    (*parsed_args, unknown_args) = parser.parse_args_into_dataclasses(return_remaining_strings=True)
+    try:
+        (*parsed_args, unknown_args) = parser.parse_args_into_dataclasses(return_remaining_strings=True)
+    except ValueError as e:
+        logger.error("parse err {}".format(e))
 
     if unknown_args:
         print(parser.format_help())
         print("Got unknown args, potentially deprecated arguments: {}".format(unknown_args))
+        logger.error("Got unknown args, potentially deprecated arguments: {}".format(unknown_args))
         raise ValueError("Some specified arguments are not used by the HfArgumentParser: {}".format(unknown_args))
 
     return (*parsed_args,)
