@@ -23,9 +23,12 @@ from ...extras.misc import get_logits_processor
 from ...extras.ploting import plot_loss
 from ...model import load_model, load_tokenizer
 from ..trainer_utils import create_modelcard_and_push
+from ...extras.logging import get_logger
 from .metric import ComputeAccuracy, ComputeSimilarity, eval_logit_processor
 from .trainer import CustomSeq2SeqTrainer
 
+
+logger = get_logger(__name__)
 
 if TYPE_CHECKING:
     from transformers import Seq2SeqTrainingArguments, TrainerCallback
@@ -43,14 +46,17 @@ def run_sft(
 ):
     tokenizer_module = load_tokenizer(model_args)
     tokenizer = tokenizer_module["tokenizer"]
+
     try:
         dataset_module = get_dataset(model_args, data_args, training_args, stage="sft", **tokenizer_module)
     except ValueError as e:
+        dataset_module = {}
         logger.error("get_dataset err {}".format(e))
 
     try:
         model = load_model(tokenizer, model_args, finetuning_args, training_args.do_train)
     except ValueError as e:
+        model = None
         logger.error("load_model err {}".format(e))
 
 
